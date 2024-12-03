@@ -13,7 +13,7 @@ Toy Box is not intended to be a generic, commercial-grade engine. Instead, it is
 ## **Key Features**  
 - **Custom ECS Framework:** Powered by the unique concepts of **Toy** (entity), **Part** (component), and **Work** (system) for flexible entity and component management.  
 - **EmberScript Scripting:** A lightweight scripting language built for embedding and runtime flexibility ([EmberScript](https://github.com/simondevenish/EmberScript)).  
-- **Physics with Phyzzy:** A C++ physics library for imaginative games, turning physics into a creative toolkit for vibrant, unexpected, and personality-filled worlds ([Phyzzy](https://github.com/simondevenish/Phyzzy)).  
+- **Physics with Phyzzy:** A physics library for imaginative games, turning physics into a creative toolkit for vibrant, unexpected, and personality-filled worlds ([Phyzzy](https://github.com/simondevenish/Phyzzy)).  
 - **AllocX Memory Management:** A high-performance custom memory management library, is integrated to optimize allocation ([AllocX](https://github.com/simondevenish/AllocX)).  
 - **Rendering with Aether:** A purpose-built renderer focused on delivering dream-like, soft visuals.  
 
