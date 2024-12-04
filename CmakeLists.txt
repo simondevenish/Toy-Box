@@ -13,6 +13,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # External dependencies directory
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 
+# ========================
+# Add External Dependencies
+# ========================
+
 # Add AllocX (CMake-based dependency)
 add_subdirectory(${EXTERNAL_DIR}/AllocX)
 
@@ -28,12 +32,13 @@ ExternalProject_Add(
     CONFIGURE_COMMAND "" # Skip configure step
     BUILD_COMMAND make
     INSTALL_COMMAND "" # No install step needed
+    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a # Declare expected output
 )
 
 # Create an imported library for EmberScript
 add_library(EmberScriptLib STATIC IMPORTED)
 set_target_properties(EmberScriptLib PROPERTIES
-    IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/libEmberScript.a
+    IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
 )
 
 # Ensure EmberScriptLib is built after EmberScript
@@ -45,10 +50,14 @@ include_directories(${EXTERNAL_DIR}/EmberScript/include)
 # Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
 
-# External libraries to link
+# ========================
+# External Libraries to Link
+# ========================
 set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib)
 
-# Add engine modules (CMake-based directories)
+# ========================
+# Add Engine Modules
+# ========================
 add_subdirectory(engine/ecs)
 add_subdirectory(engine/memory)
 add_subdirectory(engine/physics)
@@ -58,22 +67,30 @@ add_subdirectory(engine/scripting)
 add_subdirectory(engine/ui)
 add_subdirectory(engine/utils)
 
-# Create a global ToyBoxEngine library to link all components
+# ========================
+# Global ToyBoxEngine Library
+# ========================
 add_library(ToyBoxEngine INTERFACE)
 target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
 
-# Add testing support
+# Include external dependencies in ToyBoxEngine
+target_include_directories(ToyBoxEngine INTERFACE
+    ${EXTERNAL_DIR}/Phyzzy/include
+    ${EXTERNAL_DIR}/AllocX/include
+)
+
+# Add dependency between ToyBoxEngine and external libraries
+add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib)
+
+# ========================
+# Add Testing Support
+# ========================
 enable_testing()
 
-# Add test subdirectories
+# ========================
+# Test Subdirectories
+# ========================
+# Assume the test subdirectories have their own CMakeLists.txt files.
 add_subdirectory(tests/dynamicstring)
 add_subdirectory(tests/hashmap)
 add_subdirectory(tests/dynamicarray)
-
-# Ensure proper linking of Phyzzy with ToyBoxEngine
-target_include_directories(ToyBoxEngine INTERFACE
-    ${EXTERNAL_DIR}/Phyzzy/include
-)
-
-# Ensure Phyzzy builds correctly as part of the ToyBox project
-add_dependencies(ToyBoxEngine PhyzzyLib)
