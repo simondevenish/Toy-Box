@@ -367,6 +367,42 @@ void DynamicArray<T>::EmplaceAt(size_t index, Args&&... args) {
     if (index >= size) return; // Index out of bounds
     new (&data[index]) T(std::forward<Args>(args)...);
 }
+
+template<typename T>
+void DynamicArray<T>::SwapElements(size_t index1, size_t index2) {
+    if (index1 >= size || index2 >= size) return; // Index out of bounds
+    T temp = data[index1];
+    data[index1] = data[index2];
+    data[index2] = temp;
+}
+
+template<typename T>
+T& DynamicArray<T>::At(size_t index) {
+    if (index >= size) abort(); // Index out of bounds
+    return data[index];
+}
+
+template<typename T>
+const T& DynamicArray<T>::At(size_t index) const {
+    if (index >= size) abort(); // Index out of bounds
+    return data[index];
+}
+
+template<typename T>
+void DynamicArray<T>::Remove(const T& value) {
+    size_t index = Find(value);
+    if (index == static_cast<size_t>(-1)) return; // Value not found
+
+    // Shift elements to the left
+    for (size_t i = index; i < size - 1; ++i) {
+        data[i] = data[i + 1];
+    }
+
+    // Destroy the last element and reduce size
+    data[--size].~T();
+}
+
+
 } // namespace data_structures
 } // namespace utils
 } // namespace toybox
