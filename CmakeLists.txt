@@ -1,0 +1,83 @@
+cmake_minimum_required(VERSION 3.15)
+project(ToyBox)
+
+# Set default build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+# Define the minimum required C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# External dependencies
+set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
+
+# Add AllocX (CMake-based)
+add_subdirectory(${EXTERNAL_DIR}/AllocX)
+
+# Add Phyzzy manually (WIP)
+file(GLOB PHYZZY_SOURCES ${EXTERNAL_DIR}/Phyzzy/src/*.cpp)
+file(GLOB PHYZZY_HEADERS ${EXTERNAL_DIR}/Phyzzy/include/*.h)
+
+if(PHYZZY_SOURCES)
+    add_library(Phyzzy STATIC ${PHYZZY_SOURCES} ${PHYZZY_HEADERS})
+    set_target_properties(Phyzzy PROPERTIES LINKER_LANGUAGE CXX)
+    target_include_directories(Phyzzy PUBLIC ${EXTERNAL_DIR}/Phyzzy/include)
+else()
+    message(WARNING "Phyzzy library has no source files. Creating an empty target.")
+    add_library(Phyzzy STATIC "")
+endif()
+
+# Add EmberScript (Makefile-based)
+include(ExternalProject)
+ExternalProject_Add(
+    EmberScript
+    SOURCE_DIR ${EXTERNAL_DIR}/EmberScript
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND "" # No configure step for Makefile-based projects
+    BUILD_COMMAND make
+    INSTALL_COMMAND "" # No install step required
+)
+
+# Create an imported library for EmberScript
+add_library(EmberScriptLib STATIC IMPORTED)
+
+# Specify the library location for EmberScript
+set_target_properties(EmberScriptLib PROPERTIES
+    IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/libEmberScript.a
+)
+
+# Ensure EmberScriptLib is built after the EmberScript project
+add_dependencies(EmberScriptLib EmberScript)
+
+# Include EmberScript headers
+include_directories(${EXTERNAL_DIR}/EmberScript/include)
+
+# Add Google Test as a submodule
+add_subdirectory(${EXTERNAL_DIR}/googletest)
+
+# Link external libraries globally
+set(EXTERNAL_LIBS AllocX Phyzzy EmberScriptLib)
+
+# Add engine modules
+add_subdirectory(engine/ecs)
+add_subdirectory(engine/memory)
+add_subdirectory(engine/physics)
+add_subdirectory(engine/rendering)
+add_subdirectory(engine/scene)
+add_subdirectory(engine/scripting)
+add_subdirectory(engine/ui)
+add_subdirectory(engine/utils)
+
+# Global target for linking all components
+add_library(ToyBoxEngine INTERFACE)
+target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
+
+# Enable testing and add test subdirectories
+enable_testing()
+
+# Add test directories
+add_subdirectory(tests/dynamicstring)
+add_subdirectory(tests/hashmap)
+add_subdirectory(tests/dynamicarray)

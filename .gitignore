@@ -30,3 +30,58 @@
 *.exe
 *.out
 *.app
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+build/
+Testing/
+CTestTestfile.cmake
+
+# Logs and debugging
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+# MacOS system files
+.DS_Store
+
+# IDE-specific files
+.vscode/
+.idea/
+*.iml
+
+# Google Test
+googletest/build/
+
+# External dependencies
+external/AllocX/build/
+external/Phyzzy/build/
+external/Phyzzy/CMakeFiles/
+external/EmberScript/build/
+external/EmberScript/*.o
+external/EmberScript/*.obj
+external/EmberScript/*.exe
+
+# Project-specific outputs
+tests/**/build/
+tests/**/CMakeFiles/
+tests/**/CMakeCache.txt
+tests/**/cmake_install.cmake
+tests/**/Makefile
+tests/**/DynamicArrayTests
+tests/**/HashMapTests
+tests/**/DynamicStringTests
+
+# Miscellaneous
+*.bak
+*.stackdump
+*.core
+*.pyc
+*.pyo
+__pycache__/

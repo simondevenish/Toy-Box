@@ -1,0 +1,12 @@
+[submodule "external/Phyzzy"]
+	path = external/Phyzzy
+	url = https://github.com/simondevenish/Phyzzy
+[submodule "external/EmberScript"]
+	path = external/EmberScript
+	url = https://github.com/simondevenish/EmberScript
+[submodule "external/AllocX"]
+	path = external/AllocX
+	url = https://github.com/simondevenish/AllocX
+[submodule "external/googletest"]
+	path = external/googletest
+	url = https://github.com/google/googletest
