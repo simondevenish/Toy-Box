@@ -14,8 +14,6 @@
 #include <cstdlib> // For malloc, free
 #include <cassert> // For assertions
 
-#include "dynamicstring.h"
-
 namespace toybox
 {
 namespace utils

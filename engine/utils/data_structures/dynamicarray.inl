@@ -10,8 +10,6 @@
 
 #pragma once
 
-#include "dynamicarray.h"
-
 #include <cstddef> // For size_t
 #include <cstdlib> // For malloc, free
 

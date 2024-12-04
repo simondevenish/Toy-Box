@@ -13,8 +13,6 @@
 #include <cstddef> // For size_t
 #include <cstdlib> // For malloc, free
 
-#include "hashmap.h"
-
 namespace toybox
 {
 namespace utils

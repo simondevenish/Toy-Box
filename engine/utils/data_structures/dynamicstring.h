@@ -98,3 +98,5 @@ public:
 } // namespace data_structures
 } // namespace utils
 } // namespace toybox
+
+#include "dynamicstring.inl"

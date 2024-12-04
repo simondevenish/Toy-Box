@@ -72,3 +72,5 @@ public:
 } // namespace data_structures
 } // namespace utils
 } // namespace toybox
+
+#include "hashmap.inl"
