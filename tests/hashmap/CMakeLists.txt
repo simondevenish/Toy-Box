@@ -16,6 +16,7 @@ target_link_libraries(HashMapTests PRIVATE
     gtest
     gtest_main
     ToyBoxEngine
+    DataStructures
 )
 
 # Add the test to CTest
