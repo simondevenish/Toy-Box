@@ -1,56 +1,54 @@
 cmake_minimum_required(VERSION 3.15)
-project(ToyBox)
+project(ToyBox LANGUAGES C CXX)
 
-# Set default build type
+# Set default build type to Debug if not specified
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 # Define the minimum required C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# External dependencies
+# External dependencies directory
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 
-# Add AllocX (CMake-based)
+# Add AllocX (CMake-based dependency)
 add_subdirectory(${EXTERNAL_DIR}/AllocX)
 
-# Add Phyzzy as a submodule
+# Add Phyzzy (CMake-based dependency)
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
 
-# Add EmberScript (Makefile-based)
+# Add EmberScript (Makefile-based dependency)
 include(ExternalProject)
 ExternalProject_Add(
     EmberScript
     SOURCE_DIR ${EXTERNAL_DIR}/EmberScript
     BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND "" # No configure step for Makefile-based projects
+    CONFIGURE_COMMAND "" # Skip configure step
     BUILD_COMMAND make
-    INSTALL_COMMAND "" # No install step required
+    INSTALL_COMMAND "" # No install step needed
 )
 
 # Create an imported library for EmberScript
 add_library(EmberScriptLib STATIC IMPORTED)
-
-# Specify the library location for EmberScript
 set_target_properties(EmberScriptLib PROPERTIES
     IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/libEmberScript.a
 )
 
-# Ensure EmberScriptLib is built after the EmberScript project
+# Ensure EmberScriptLib is built after EmberScript
 add_dependencies(EmberScriptLib EmberScript)
 
-# Include EmberScript headers
+# Include EmberScript headers globally
 include_directories(${EXTERNAL_DIR}/EmberScript/include)
 
 # Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
 
-# Link external libraries globally
-set(EXTERNAL_LIBS AllocX Phyzzy EmberScriptLib)
+# External libraries to link
+set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib)
 
-# Add engine modules
+# Add engine modules (CMake-based directories)
 add_subdirectory(engine/ecs)
 add_subdirectory(engine/memory)
 add_subdirectory(engine/physics)
@@ -60,14 +58,22 @@ add_subdirectory(engine/scripting)
 add_subdirectory(engine/ui)
 add_subdirectory(engine/utils)
 
-# Global target for linking all components
+# Create a global ToyBoxEngine library to link all components
 add_library(ToyBoxEngine INTERFACE)
 target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
 
-# Enable testing and add test subdirectories
+# Add testing support
 enable_testing()
 
-# Add test directories
+# Add test subdirectories
 add_subdirectory(tests/dynamicstring)
 add_subdirectory(tests/hashmap)
 add_subdirectory(tests/dynamicarray)
+
+# Ensure proper linking of Phyzzy with ToyBoxEngine
+target_include_directories(ToyBoxEngine INTERFACE
+    ${EXTERNAL_DIR}/Phyzzy/include
+)
+
+# Ensure Phyzzy builds correctly as part of the ToyBox project
+add_dependencies(ToyBoxEngine PhyzzyLib)
