@@ -82,11 +82,8 @@ public:
     // Resize the string (adjust capacity)
     void Resize(size_t new_capacity);
 
-    // Access character at index
-    char& At(size_t index);
-
-    // Access character at index (const)
-    const char& At(size_t index) const;
+    // Access character at index (returns true on success, false on failure)
+    bool At(size_t index, char* out_char) const;
 
     // Get C-string representation
     const char* CStr() const;
@@ -98,5 +95,3 @@ public:
 } // namespace data_structures
 } // namespace utils
 } // namespace toybox
-
-#include "dynamicstring.inl"

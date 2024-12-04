@@ -3,13 +3,17 @@ set(DATA_STRUCTURES_HEADERS
     dynamicarray.h
     dynamicarray.inl
     dynamicstring.h
-    dynamicstring.inl
     hashmap.h
     hashmap.inl
 )
 
-# Create a library for the data structures
-add_library(DataStructures INTERFACE)
+# Collect all source files
+set(DATA_STRUCTURES_SOURCES
+    dynamicstring.cpp
+)
+
+# Create a STATIC library for the data structures
+add_library(DataStructures STATIC ${DATA_STRUCTURES_SOURCES})
 
 # Add include directories for the headers
-target_include_directories(DataStructures INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(DataStructures PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

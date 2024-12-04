@@ -14,6 +14,8 @@
 #include <cstdlib> // For malloc, free
 #include <cassert> // For assertions
 
+#include "dynamicstring.h"
+
 namespace toybox
 {
 namespace utils
@@ -23,6 +25,8 @@ namespace data_structures
     
 bool DynamicString::operator==(const DynamicString& other) const {
     if (size != other.size) return false;
+    if (data == nullptr && other.data == nullptr) return true;
+    if (data == nullptr || other.data == nullptr) return false;
     return memcmp(data, other.data, size) == 0;
 }
 
@@ -37,11 +41,13 @@ DynamicString& DynamicString::operator+=(const DynamicString& other) {
 }
 
 char& DynamicString::operator[](size_t index) {
-    return At(index);
+    // Unsafe access; caller must ensure index is valid
+    return data[index];
 }
 
 const char& DynamicString::operator[](size_t index) const {
-    return At(index);
+    // Unsafe access; caller must ensure index is valid
+    return data[index];
 }
 
 void DynamicString::Grow(size_t new_capacity) {
@@ -92,9 +98,20 @@ DynamicString::DynamicString(DynamicString&& other) noexcept
 DynamicString& DynamicString::operator=(const DynamicString& other) {
     if (this != &other) {
         Clear();
-        size = other.size;
-        Grow(other.capacity);
+        if (data) {
+            free(data);
+            data = nullptr;
+        }
+        size = 0;
+        capacity = 0;
+
         if (other.data) {
+            size = other.size;
+            capacity = other.capacity;
+            data = static_cast<char*>(malloc(capacity));
+            if (!data) {
+                abort(); // Handle memory allocation failure
+            }
             memcpy(data, other.data, size);
             data[size] = '\0';
         }
@@ -120,7 +137,9 @@ DynamicString& DynamicString::operator=(DynamicString&& other) noexcept {
 
 DynamicString::~DynamicString() {
     Clear();
-    free(data);
+    if (data) {
+        free(data);
+    }
 }
 
 size_t DynamicString::Length() const {
@@ -161,14 +180,12 @@ void DynamicString::Resize(size_t new_capacity) {
     Grow(new_capacity);
 }
 
-char& DynamicString::At(size_t index) {
-    assert(index < size && "Index out of bounds");
-    return data[index];
-}
-
-const char& DynamicString::At(size_t index) const {
-    assert(index < size && "Index out of bounds");
-    return data[index];
+bool DynamicString::At(size_t index, char* out_char) const {
+    if (index >= size || out_char == nullptr) {
+        return false;
+    }
+    *out_char = data[index];
+    return true;
 }
 
 const char* DynamicString::CStr() const {

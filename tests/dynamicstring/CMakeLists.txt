@@ -6,7 +6,7 @@ set(DYNAMICSTRING_TEST_SOURCES
 # Create the executable for the tests
 add_executable(DynamicStringTests ${DYNAMICSTRING_TEST_SOURCES})
 
-# Include directories for the DynamicString library
+# Include directories for the DataStructures library
 target_include_directories(DynamicStringTests PRIVATE
     ${CMAKE_SOURCE_DIR}/engine/utils/data_structures
 )
@@ -15,7 +15,7 @@ target_include_directories(DynamicStringTests PRIVATE
 target_link_libraries(DynamicStringTests PRIVATE
     gtest
     gtest_main
-    ToyBoxEngine
+    DataStructures
 )
 
 # Add the test to CTest

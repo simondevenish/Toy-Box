@@ -85,10 +85,14 @@ TEST(DynamicStringTests, SubscriptOperator) {
 
 TEST(DynamicStringTests, AtMethod) {
     DynamicString str("Access");
-    EXPECT_EQ(str.At(0), 'A');
-    EXPECT_EQ(str.At(3), 'e');
-    EXPECT_ANY_THROW(str.At(10)); // Out of bounds
+    char c;
+    EXPECT_TRUE(str.At(0, &c));
+    EXPECT_EQ(c, 'A');
+    EXPECT_TRUE(str.At(3, &c));
+    EXPECT_EQ(c, 'e');
+    EXPECT_FALSE(str.At(10, &c));
 }
+
 
 TEST(DynamicStringTests, CapacityAndResize) {
     DynamicString str("Test");
