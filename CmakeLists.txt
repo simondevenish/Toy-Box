@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(ToyBox LANGUAGES C CXX)
+project(ToyBox LANGUAGES C CXX OBJC)
 
 # Set default build type to Debug if not specified
 if(NOT CMAKE_BUILD_TYPE)
@@ -9,6 +9,9 @@ endif()
 # Define the minimum required C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set the minimum macOS deployment target
+set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING "Minimum OS X deployment version")
 
 # External dependencies directory
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
@@ -33,47 +36,50 @@ ExternalProject_Add(
     BUILD_COMMAND make
     INSTALL_COMMAND "" # No install step needed
     BUILD_BYPRODUCTS ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a # Declare expected output
+    BUILD_ALWAYS 1 # Always build to ensure deployment target matches
 )
 
 # Create an imported library for EmberScript
 add_library(EmberScriptLib STATIC IMPORTED)
 set_target_properties(EmberScriptLib PROPERTIES
     IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
+    INTERFACE_INCLUDE_DIRECTORIES ${EXTERNAL_DIR}/EmberScript/include
 )
 
 # Ensure EmberScriptLib is built after EmberScript
 add_dependencies(EmberScriptLib EmberScript)
 
-# Include EmberScript headers globally
-include_directories(${EXTERNAL_DIR}/EmberScript/include)
+# Define SDL paths
+set(SDL_SOURCE_DIR ${EXTERNAL_DIR}/SDL2)  # Adjust if your SDL source is elsewhere
+set(SDL_INSTALL_DIR ${SDL_SOURCE_DIR}/install)
+set(SDL_LIB_DIR ${SDL_INSTALL_DIR}/lib)
+set(SDL_INCLUDE_DIR ${SDL_INSTALL_DIR}/include)
 
-# Add SDL2 (CMake-based dependency)
+# Add SDL3 (CMake-based dependency)
 include(ExternalProject)
 ExternalProject_Add(
-    SDL2
-    SOURCE_DIR ${EXTERNAL_DIR}/SDL2
-    BINARY_DIR ${EXTERNAL_DIR}/SDL2/build
+    SDL3
+    SOURCE_DIR ${SDL_SOURCE_DIR}
+    BINARY_DIR ${SDL_SOURCE_DIR}/build
     CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/SDL2/install
+        -DCMAKE_INSTALL_PREFIX=${SDL_INSTALL_DIR}
         -DSDL_STATIC=ON
         -DSDL_TEST=OFF
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ${CMAKE_COMMAND} --install .
-    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/SDL2/install/lib/libSDL2.a # Adjust based on your platform
+    BUILD_BYPRODUCTS ${SDL_LIB_DIR}/libSDL3.a # Adjust based on your platform and actual file name
 )
 
-# Create an imported library for SDL2
-add_library(SDL2Lib STATIC IMPORTED)
-set_target_properties(SDL2Lib PROPERTIES
-    IMPORTED_LOCATION ${EXTERNAL_DIR}/SDL2/install/lib/libSDL2.a # Adjust based on platform
+# Create an imported library for SDL3
+add_library(SDL3Lib STATIC IMPORTED)
+set_target_properties(SDL3Lib PROPERTIES
+    IMPORTED_LOCATION ${SDL_LIB_DIR}/libSDL3.a # Adjust based on actual library file name
+    INTERFACE_INCLUDE_DIRECTORIES ${SDL_INCLUDE_DIR}
 )
 
-# Include SDL2 headers globally
-include_directories(${EXTERNAL_DIR}/SDL2/install/include/SDL3)
-
-
-# Ensure SDL2Lib is built after SDL2
-add_dependencies(SDL2Lib SDL2)
+# Ensure SDL3Lib is built after SDL3
+add_dependencies(SDL3Lib SDL3)
 
 # Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
@@ -81,7 +87,7 @@ add_subdirectory(${EXTERNAL_DIR}/googletest)
 # ========================
 # External Libraries to Link
 # ========================
-set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL2Lib)
+set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL3Lib)
 
 # ========================
 # Add Engine Modules
@@ -101,28 +107,49 @@ add_subdirectory(engine/utils)
 add_library(ToyBoxEngine INTERFACE)
 target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
 
-# Include external dependencies in ToyBoxEngine
+# Include external dependencies in ToyBoxEngine (handled via target properties)
 target_include_directories(ToyBoxEngine INTERFACE
     ${EXTERNAL_DIR}/Phyzzy/include
     ${EXTERNAL_DIR}/AllocX/include
-    ${EXTERNAL_DIR}/SDL2/install/include/SDL3
+    # SDL3 include directory is provided via SDL3Lib
 )
 
 # Add dependency between ToyBoxEngine and external libraries
-add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL2Lib)
+add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL3Lib)
 
 # ========================
 # Add ToyBox Executable
 # ========================
 add_executable(ToyBoxApp main.cpp)
 
-# Link the ToyBoxEngine library to the executable
+# Link the ToyBoxEngine library and macOS frameworks to the executable
 target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine)
-target_include_directories(ToyBoxApp PRIVATE
-    ${EXTERNAL_DIR}/Phyzzy/include
-    ${EXTERNAL_DIR}/AllocX/include
-    ${EXTERNAL_DIR}/SDL2/install/include/SDL3
+
+# List of required macOS frameworks for SDL
+set(MACOSX_FRAMEWORKS
+    "-framework Cocoa"
+    "-framework IOKit"
+    "-framework CoreFoundation"
+    "-framework CoreVideo"
+    "-framework Carbon"
+    "-framework ForceFeedback"
+    "-framework AudioToolbox"
+    "-framework AVFoundation"
+    "-framework Metal"
+    "-framework QuartzCore"
+    "-framework CoreGraphics"
+    "-framework CoreAudio"
+    "-framework CoreHaptics"
+    "-framework CoreMedia"
+    "-framework GameController"
+    "-framework UniformTypeIdentifiers"
 )
+
+# Link the frameworks to your executable
+target_link_libraries(ToyBoxApp PRIVATE ${MACOSX_FRAMEWORKS})
+
+# Set the linker language to C++
+set_target_properties(ToyBoxApp PROPERTIES LINKER_LANGUAGE CXX)
 
 # ========================
 # Add Testing Support
