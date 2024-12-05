@@ -67,6 +67,7 @@ external/EmberScript/build/
 external/EmberScript/*.o
 external/EmberScript/*.obj
 external/EmberScript/*.exe
+external/SDL2/
 
 # Project-specific outputs
 tests/**/build/

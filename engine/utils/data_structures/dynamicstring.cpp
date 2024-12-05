@@ -8,7 +8,6 @@
  * simon.devenish@outlook.com
  */
 
-#pragma once
 
 #include <cstddef> // For size_t
 #include <cstdlib> // For malloc, free

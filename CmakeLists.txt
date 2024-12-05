@@ -47,13 +47,41 @@ add_dependencies(EmberScriptLib EmberScript)
 # Include EmberScript headers globally
 include_directories(${EXTERNAL_DIR}/EmberScript/include)
 
+# Add SDL2 (CMake-based dependency)
+include(ExternalProject)
+ExternalProject_Add(
+    SDL2
+    SOURCE_DIR ${EXTERNAL_DIR}/SDL2
+    BINARY_DIR ${EXTERNAL_DIR}/SDL2/build
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${EXTERNAL_DIR}/SDL2/install
+        -DSDL_STATIC=ON
+        -DSDL_TEST=OFF
+    BUILD_COMMAND ${CMAKE_COMMAND} --build .
+    INSTALL_COMMAND ${CMAKE_COMMAND} --install .
+    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/SDL2/install/lib/libSDL2.a # Adjust based on your platform
+)
+
+# Create an imported library for SDL2
+add_library(SDL2Lib STATIC IMPORTED)
+set_target_properties(SDL2Lib PROPERTIES
+    IMPORTED_LOCATION ${EXTERNAL_DIR}/SDL2/install/lib/libSDL2.a # Adjust based on platform
+)
+
+# Include SDL2 headers globally
+include_directories(${EXTERNAL_DIR}/SDL2/install/include/SDL3)
+
+
+# Ensure SDL2Lib is built after SDL2
+add_dependencies(SDL2Lib SDL2)
+
 # Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
 
 # ========================
 # External Libraries to Link
 # ========================
-set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib)
+set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL2Lib)
 
 # ========================
 # Add Engine Modules
@@ -77,10 +105,24 @@ target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
 target_include_directories(ToyBoxEngine INTERFACE
     ${EXTERNAL_DIR}/Phyzzy/include
     ${EXTERNAL_DIR}/AllocX/include
+    ${EXTERNAL_DIR}/SDL2/install/include/SDL3
 )
 
 # Add dependency between ToyBoxEngine and external libraries
-add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib)
+add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL2Lib)
+
+# ========================
+# Add ToyBox Executable
+# ========================
+add_executable(ToyBoxApp main.cpp)
+
+# Link the ToyBoxEngine library to the executable
+target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine)
+target_include_directories(ToyBoxApp PRIVATE
+    ${EXTERNAL_DIR}/Phyzzy/include
+    ${EXTERNAL_DIR}/AllocX/include
+    ${EXTERNAL_DIR}/SDL2/install/include/SDL3
+)
 
 # ========================
 # Add Testing Support
