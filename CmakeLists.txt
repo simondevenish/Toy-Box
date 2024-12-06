@@ -49,37 +49,51 @@ set_target_properties(EmberScriptLib PROPERTIES
 # Ensure EmberScriptLib is built after EmberScript
 add_dependencies(EmberScriptLib EmberScript)
 
-# Define SDL paths
-set(SDL_SOURCE_DIR ${EXTERNAL_DIR}/SDL2)  # Adjust if your SDL source is elsewhere
-set(SDL_INSTALL_DIR ${SDL_SOURCE_DIR}/install)
-set(SDL_LIB_DIR ${SDL_INSTALL_DIR}/lib)
-set(SDL_INCLUDE_DIR ${SDL_INSTALL_DIR}/include)
+# Define SDL2 paths
+set(SDL2_SOURCE_DIR ${EXTERNAL_DIR}/SDL2)  # Adjust if your SDL2 source is elsewhere
+set(SDL2_INSTALL_DIR ${SDL2_SOURCE_DIR}/install)
+set(SDL2_LIB_DIR ${SDL2_INSTALL_DIR}/lib)
+set(SDL2_INCLUDE_DIR ${SDL2_INSTALL_DIR}/include)
 
-# Add SDL3 (CMake-based dependency)
+# Add SDL2 (CMake-based dependency)
 include(ExternalProject)
 ExternalProject_Add(
-    SDL3
-    SOURCE_DIR ${SDL_SOURCE_DIR}
-    BINARY_DIR ${SDL_SOURCE_DIR}/build
+    SDL2
+    SOURCE_DIR ${SDL2_SOURCE_DIR}
+    BINARY_DIR ${SDL2_SOURCE_DIR}/build
     CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${SDL_INSTALL_DIR}
+        -DCMAKE_INSTALL_PREFIX=${SDL2_INSTALL_DIR}
         -DSDL_STATIC=ON
         -DSDL_TEST=OFF
+        -DSDL_VIDEO_VULKAN=ON  # Enable Vulkan support for SDL2
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ${CMAKE_COMMAND} --install .
-    BUILD_BYPRODUCTS ${SDL_LIB_DIR}/libSDL3.a # Adjust based on your platform and actual file name
 )
 
-# Create an imported library for SDL3
-add_library(SDL3Lib STATIC IMPORTED)
-set_target_properties(SDL3Lib PROPERTIES
-    IMPORTED_LOCATION ${SDL_LIB_DIR}/libSDL3.a # Adjust based on actual library file name
-    INTERFACE_INCLUDE_DIRECTORIES ${SDL_INCLUDE_DIR}
+# Create an imported library for SDL2
+# SDL2 static library location is corrected here to handle cases where SDL2 produces a shared library or renamed files.
+find_library(SDL2_LIB NAMES SDL2 PATHS ${SDL2_LIB_DIR})
+add_library(SDL2Lib STATIC IMPORTED)
+set_target_properties(SDL2Lib PROPERTIES
+    IMPORTED_LOCATION ${SDL2_LIB} # Adjust based on found library file
+    INTERFACE_INCLUDE_DIRECTORIES ${SDL2_INCLUDE_DIR}
 )
 
-# Ensure SDL3Lib is built after SDL3
-add_dependencies(SDL3Lib SDL3)
+# Ensure SDL2Lib is built after SDL2
+add_dependencies(SDL2Lib SDL2)
+
+# Find Vulkan SDK for macOS
+find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
+find_path(VULKAN_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS $ENV{VULKAN_SDK}/include)
+
+if(VULKAN_LIBRARY AND VULKAN_INCLUDE_DIR)
+    message(STATUS "Found Vulkan library: ${VULKAN_LIBRARY}")
+    message(STATUS "Found Vulkan include directory: ${VULKAN_INCLUDE_DIR}")
+    include_directories(${VULKAN_INCLUDE_DIR})
+else()
+    message(FATAL_ERROR "Vulkan SDK not found. Please install the Vulkan SDK and set VULKAN_SDK environment variable.")
+endif()
 
 # Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
@@ -87,7 +101,7 @@ add_subdirectory(${EXTERNAL_DIR}/googletest)
 # ========================
 # External Libraries to Link
 # ========================
-set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL3Lib)
+set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL2Lib)
 
 # ========================
 # Add Engine Modules
@@ -111,19 +125,19 @@ target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
 target_include_directories(ToyBoxEngine INTERFACE
     ${EXTERNAL_DIR}/Phyzzy/include
     ${EXTERNAL_DIR}/AllocX/include
-    # SDL3 include directory is provided via SDL3Lib
+    # SDL2 include directory is provided via SDL2Lib
 )
 
 # Add dependency between ToyBoxEngine and external libraries
-add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL3Lib)
+add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL2Lib)
 
 # ========================
 # Add ToyBox Executable
 # ========================
 add_executable(ToyBoxApp main.cpp)
 
-# Link the ToyBoxEngine library and macOS frameworks to the executable
-target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine)
+# Link the ToyBoxEngine library, Vulkan, and macOS frameworks to the executable
+target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine ${VULKAN_LIBRARY})
 
 # List of required macOS frameworks for SDL
 set(MACOSX_FRAMEWORKS
@@ -145,7 +159,7 @@ set(MACOSX_FRAMEWORKS
     "-framework UniformTypeIdentifiers"
 )
 
-# Link the frameworks to your executable
+# Link the frameworks to executable
 target_link_libraries(ToyBoxApp PRIVATE ${MACOSX_FRAMEWORKS})
 
 # Set the linker language to C++
