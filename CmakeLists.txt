@@ -1,107 +1,81 @@
 cmake_minimum_required(VERSION 3.15)
 project(ToyBox LANGUAGES C CXX OBJC)
 
-# Set default build type to Debug if not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# Define the minimum required C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the minimum macOS deployment target
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING "Minimum OS X deployment version")
 
-# External dependencies directory
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 
 # ========================
 # Add External Dependencies
 # ========================
-
-# Add AllocX (CMake-based dependency)
 add_subdirectory(${EXTERNAL_DIR}/AllocX)
+set_target_properties(AllocX PROPERTIES FOLDER "External")
 
-# Add Phyzzy (CMake-based dependency)
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
+set_target_properties(PhyzzyLib PROPERTIES FOLDER "External")
 
-# Add EmberScript (Makefile-based dependency)
 include(ExternalProject)
 ExternalProject_Add(
     EmberScript
     SOURCE_DIR ${EXTERNAL_DIR}/EmberScript
     BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND "" # Skip configure step
+    CONFIGURE_COMMAND "" # Skip configure
     BUILD_COMMAND make
-    INSTALL_COMMAND "" # No install step needed
-    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a # Declare expected output
-    BUILD_ALWAYS 1 # Always build to ensure deployment target matches
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
+    BUILD_ALWAYS 1
 )
 
-# Create an imported library for EmberScript
+# Set the folder for the external project target if it exists
+if(TARGET EmberScript)
+    set_target_properties(EmberScript PROPERTIES FOLDER "External")
+endif()
+
 add_library(EmberScriptLib STATIC IMPORTED)
 set_target_properties(EmberScriptLib PROPERTIES
     IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
     INTERFACE_INCLUDE_DIRECTORIES ${EXTERNAL_DIR}/EmberScript/include
+    FOLDER "External"
 )
-
-# Ensure EmberScriptLib is built after EmberScript
 add_dependencies(EmberScriptLib EmberScript)
 
-# Define SDL2 paths
-set(SDL2_SOURCE_DIR ${EXTERNAL_DIR}/SDL2)  # Adjust if your SDL2 source is elsewhere
-set(SDL2_INSTALL_DIR ${SDL2_SOURCE_DIR}/install)
-set(SDL2_LIB_DIR ${SDL2_INSTALL_DIR}/lib)
-set(SDL2_INCLUDE_DIR ${SDL2_INSTALL_DIR}/include)
+if(APPLE)
+    find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
+    find_path(VULKAN_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS $ENV{VULKAN_SDK}/include)
 
-# Add SDL2 (CMake-based dependency)
-include(ExternalProject)
-ExternalProject_Add(
-    SDL2
-    SOURCE_DIR ${SDL2_SOURCE_DIR}
-    BINARY_DIR ${SDL2_SOURCE_DIR}/build
-    CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${SDL2_INSTALL_DIR}
-        -DSDL_STATIC=ON
-        -DSDL_TEST=OFF
-        -DSDL_VIDEO_VULKAN=ON  # Enable Vulkan support for SDL2
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
-    BUILD_COMMAND ${CMAKE_COMMAND} --build .
-    INSTALL_COMMAND ${CMAKE_COMMAND} --install .
-)
-
-# Create an imported library for SDL2
-# SDL2 static library location is corrected here to handle cases where SDL2 produces a shared library or renamed files.
-find_library(SDL2_LIB NAMES SDL2 PATHS ${SDL2_LIB_DIR})
-add_library(SDL2Lib STATIC IMPORTED)
-set_target_properties(SDL2Lib PROPERTIES
-    IMPORTED_LOCATION ${SDL2_LIB} # Adjust based on found library file
-    INTERFACE_INCLUDE_DIRECTORIES ${SDL2_INCLUDE_DIR}
-)
-
-# Ensure SDL2Lib is built after SDL2
-add_dependencies(SDL2Lib SDL2)
-
-# Find Vulkan SDK for macOS
-find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
-find_path(VULKAN_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS $ENV{VULKAN_SDK}/include)
-
-if(VULKAN_LIBRARY AND VULKAN_INCLUDE_DIR)
-    message(STATUS "Found Vulkan library: ${VULKAN_LIBRARY}")
-    message(STATUS "Found Vulkan include directory: ${VULKAN_INCLUDE_DIR}")
-    include_directories(${VULKAN_INCLUDE_DIR})
-else()
-    message(FATAL_ERROR "Vulkan SDK not found. Please install the Vulkan SDK and set VULKAN_SDK environment variable.")
+    if(VULKAN_LIBRARY AND VULKAN_INCLUDE_DIR)
+        message(STATUS "Found Vulkan library: ${VULKAN_LIBRARY}")
+        message(STATUS "Found Vulkan include directory: ${VULKAN_INCLUDE_DIR}")
+        include_directories(${VULKAN_INCLUDE_DIR})
+    else()
+        message(FATAL_ERROR "Vulkan SDK not found. Please install the Vulkan SDK and set VULKAN_SDK environment variable.")
+    endif()
 endif()
 
-# Add Google Test as a submodule
 add_subdirectory(${EXTERNAL_DIR}/googletest)
+if(TARGET gtest)
+    set_target_properties(gtest PROPERTIES FOLDER "External/GoogleTest")
+endif()
+if(TARGET gtest_main)
+    set_target_properties(gtest_main PROPERTIES FOLDER "External/GoogleTest")
+endif()
+if(TARGET gmock)
+    set_target_properties(gmock PROPERTIES FOLDER "External/GoogleTest")
+endif()
+if(TARGET gmock_main)
+    set_target_properties(gmock_main PROPERTIES FOLDER "External/GoogleTest")
+endif()
 
-# ========================
-# External Libraries to Link
-# ========================
-set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib SDL2Lib)
+set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib)
 
 # ========================
 # Add Engine Modules
@@ -115,65 +89,92 @@ add_subdirectory(engine/scripting)
 add_subdirectory(engine/ui)
 add_subdirectory(engine/utils)
 
-# ========================
-# Global ToyBoxEngine Library
-# ========================
+if(TARGET MemoryModule)
+    set_target_properties(MemoryModule PROPERTIES FOLDER "Engine/Modules")
+endif()
+if(TARGET PhysicsModule)
+    set_target_properties(PhysicsModule PROPERTIES FOLDER "Engine/Modules")
+endif()
+if(TARGET ScriptingModule)
+    set_target_properties(ScriptingModule PROPERTIES FOLDER "Engine/Modules")
+endif()
+
+if(TARGET DataStructures)
+    set_target_properties(DataStructures PROPERTIES FOLDER "Engine/Modules")
+endif()
+
 add_library(ToyBoxEngine INTERFACE)
 target_link_libraries(ToyBoxEngine INTERFACE ${EXTERNAL_LIBS})
-
-# Include external dependencies in ToyBoxEngine (handled via target properties)
 target_include_directories(ToyBoxEngine INTERFACE
     ${EXTERNAL_DIR}/Phyzzy/include
     ${EXTERNAL_DIR}/AllocX/include
-    # SDL2 include directory is provided via SDL2Lib
 )
+add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib)
+set_target_properties(ToyBoxEngine PROPERTIES FOLDER "Engine")
 
-# Add dependency between ToyBoxEngine and external libraries
-add_dependencies(ToyBoxEngine PhyzzyLib EmberScriptLib SDL2Lib)
-
-# ========================
-# Add ToyBox Executable
-# ========================
 add_executable(ToyBoxApp main.cpp)
+set_target_properties(ToyBoxApp PROPERTIES FOLDER "Applications")
 
-# Link the ToyBoxEngine library, Vulkan, and macOS frameworks to the executable
-target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine ${VULKAN_LIBRARY})
+if(APPLE)
+    target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine ${VULKAN_LIBRARY})
+else()
+    target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine)
+endif()
 
-# List of required macOS frameworks for SDL
-set(MACOSX_FRAMEWORKS
-    "-framework Cocoa"
-    "-framework IOKit"
-    "-framework CoreFoundation"
-    "-framework CoreVideo"
-    "-framework Carbon"
-    "-framework ForceFeedback"
-    "-framework AudioToolbox"
-    "-framework AVFoundation"
-    "-framework Metal"
-    "-framework QuartzCore"
-    "-framework CoreGraphics"
-    "-framework CoreAudio"
-    "-framework CoreHaptics"
-    "-framework CoreMedia"
-    "-framework GameController"
-    "-framework UniformTypeIdentifiers"
-)
+if(APPLE)
+    set(MACOSX_FRAMEWORKS
+        "-framework Cocoa"
+        "-framework IOKit"
+        "-framework CoreFoundation"
+        "-framework CoreVideo"
+        "-framework AudioToolbox"
+        "-framework AVFoundation"
+        "-framework Metal"
+        "-framework QuartzCore"
+        "-framework CoreGraphics"
+        "-framework CoreAudio"
+        "-framework CoreMedia"
+        "-framework UniformTypeIdentifiers"
+    )
+    target_link_libraries(ToyBoxApp PRIVATE ${MACOSX_FRAMEWORKS})
+endif()
 
-# Link the frameworks to executable
-target_link_libraries(ToyBoxApp PRIVATE ${MACOSX_FRAMEWORKS})
-
-# Set the linker language to C++
 set_target_properties(ToyBoxApp PROPERTIES LINKER_LANGUAGE CXX)
 
-# ========================
-# Add Testing Support
-# ========================
 enable_testing()
 
-# ========================
-# Test Subdirectories
-# ========================
-# Assume the test subdirectories have their own CMakeLists.txt files.
 add_subdirectory(tests/dynamicstring)
 add_subdirectory(tests/hashmap)
 add_subdirectory(tests/dynamicarray)
+
+if(TARGET DynamicArrayTests)
+    set_target_properties(DynamicArrayTests PROPERTIES FOLDER "Tests")
+endif()
+if(TARGET DynamicStringTests)
+    set_target_properties(DynamicStringTests PROPERTIES FOLDER "Tests")
+endif()
+if(TARGET HashMapTests)
+    set_target_properties(HashMapTests PROPERTIES FOLDER "Tests")
+endif()
+
+if(TARGET ALL_BUILD)
+    set_target_properties(ALL_BUILD PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET ZERO_CHECK)
+    set_target_properties(ZERO_CHECK PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET INSTALL)
+    set_target_properties(INSTALL PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET RUN_TESTS)
+    set_target_properties(RUN_TESTS PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET Continuous)
+    set_target_properties(Continuous PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET Nightly)
+    set_target_properties(Nightly PROPERTIES FOLDER "CMake Utilities")
+endif()
+if(TARGET NightlyMemoryCheck)
+    set_target_properties(NightlyMemoryCheck PROPERTIES FOLDER "CMake Utilities")
+endif()
