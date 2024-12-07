@@ -16,3 +16,6 @@
 [submodule "external/SDL2"]
 	path = external/SDL2
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "external/The-Forge-Toy-Box"]
+	path = external/The-Forge-Toy-Box
+	url = https://github.com/simondevenish/The-Forge-Toy-Box.git
