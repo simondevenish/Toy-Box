@@ -35,7 +35,6 @@ ExternalProject_Add(
     BUILD_ALWAYS 1
 )
 
-# Set the folder for the external project target if it exists
 if(TARGET EmberScript)
     set_target_properties(EmberScript PROPERTIES FOLDER "External")
 endif()
@@ -51,7 +50,6 @@ add_dependencies(EmberScriptLib EmberScript)
 if(APPLE)
     find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
     find_path(VULKAN_INCLUDE_DIR NAMES vulkan/vulkan.h HINTS $ENV{VULKAN_SDK}/include)
-
     if(VULKAN_LIBRARY AND VULKAN_INCLUDE_DIR)
         message(STATUS "Found Vulkan library: ${VULKAN_LIBRARY}")
         message(STATUS "Found Vulkan include directory: ${VULKAN_INCLUDE_DIR}")
@@ -99,7 +97,16 @@ if(TARGET ScriptingModule)
     set_target_properties(ScriptingModule PROPERTIES FOLDER "Engine/Modules")
 endif()
 
+# Add headers and inl files to DataStructures if it exists
+file(GLOB DATA_STRUCTURES_HEADERS 
+    "${CMAKE_SOURCE_DIR}/engine/utils/data_structures/*.h"
+    "${CMAKE_SOURCE_DIR}/engine/utils/data_structures/*.inl"
+)
+
 if(TARGET DataStructures)
+    # Add header and inl files to the DataStructures target
+    target_sources(DataStructures PRIVATE ${DATA_STRUCTURES_HEADERS})
+    source_group("Header Files" FILES ${DATA_STRUCTURES_HEADERS})
     set_target_properties(DataStructures PROPERTIES FOLDER "Engine/Modules")
 endif()
 
