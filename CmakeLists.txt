@@ -19,30 +19,38 @@ set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 add_subdirectory(${EXTERNAL_DIR}/AllocX)
 set_target_properties(AllocX PROPERTIES FOLDER "External")
 
-# Glob AllocX headers (note the `allocx` subdirectory) and add them to the AllocX target
 file(GLOB ALLOCX_HEADERS "${EXTERNAL_DIR}/AllocX/include/allocx/*.h")
 if(TARGET AllocX)
     target_include_directories(AllocX PUBLIC "${EXTERNAL_DIR}/AllocX/include")
     target_sources(AllocX PRIVATE ${ALLOCX_HEADERS})
     source_group("Header Files" FILES ${ALLOCX_HEADERS})
+    # On MSVC, disable atomics if needed:
+    if(MSVC)
+        target_compile_definitions(AllocX PRIVATE __STDC_NO_ATOMICS__)
+    endif()
 endif()
 
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
 set_target_properties(PhyzzyLib PROPERTIES FOLDER "External")
-# PhyzzyLib already has headers included as per the original description, no changes needed.
+# If warnings cause errors:
+if(MSVC)
+    target_compile_options(PhyzzyLib PRIVATE /wd4201) # Disable nameless struct warning
+endif()
 
-# Remove ExternalProject_Add() for EmberScript
-# Instead, define EmberScriptLib directly from its source code.
 file(GLOB EMBERSCRIPT_SRCS "${EXTERNAL_DIR}/EmberScript/src/*.c")
 file(GLOB EMBERSCRIPT_HEADERS "${EXTERNAL_DIR}/EmberScript/include/*.h")
 
 add_library(EmberScriptLib STATIC ${EMBERSCRIPT_SRCS})
 target_include_directories(EmberScriptLib PUBLIC "${EXTERNAL_DIR}/EmberScript/include")
 set_target_properties(EmberScriptLib PROPERTIES FOLDER "External")
-
-# Add EmberScript headers to EmberScriptLib
 target_sources(EmberScriptLib PRIVATE ${EMBERSCRIPT_HEADERS})
 source_group("Header Files" FILES ${EMBERSCRIPT_HEADERS})
+
+# For EmberScript if it uses pthread.h and is not available on Windows:
+if(MSVC)
+    target_compile_definitions(EmberScriptLib PRIVATE NO_PTHREAD)
+    # You must modify EmberScript source to avoid pthread usage if NO_PTHREAD is defined
+endif()
 
 if(APPLE)
     find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
@@ -108,6 +116,17 @@ set_target_properties(ToyBoxEngine PROPERTIES FOLDER "Engine")
 
 add_executable(ToyBoxApp main.cpp)
 set_target_properties(ToyBoxApp PROPERTIES FOLDER "Applications")
+
+# Include The Forge Common_3 directories
+target_include_directories(ToyBoxApp PRIVATE
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Application/Interfaces"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/OS/Interfaces"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Graphics/Interfaces"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Resources/ResourceLoader/Interfaces"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Utilities/Interfaces"
+    "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Game/Interfaces"
+)
 
 if(APPLE)
     target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine ${VULKAN_LIBRARY})
