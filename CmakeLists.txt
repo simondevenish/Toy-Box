@@ -7,7 +7,6 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING "Minimum OS X deployment version")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -23,29 +22,13 @@ set_target_properties(AllocX PROPERTIES FOLDER "External")
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
 set_target_properties(PhyzzyLib PROPERTIES FOLDER "External")
 
-include(ExternalProject)
-ExternalProject_Add(
-    EmberScript
-    SOURCE_DIR ${EXTERNAL_DIR}/EmberScript
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND "" # Skip configure
-    BUILD_COMMAND make
-    INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
-    BUILD_ALWAYS 1
-)
+# Remove ExternalProject_Add() for EmberScript
+# Instead, define EmberScriptLib directly from its source code.
+file(GLOB EMBERSCRIPT_SRCS "${EXTERNAL_DIR}/EmberScript/src/*.c")
 
-if(TARGET EmberScript)
-    set_target_properties(EmberScript PROPERTIES FOLDER "External")
-endif()
-
-add_library(EmberScriptLib STATIC IMPORTED)
-set_target_properties(EmberScriptLib PROPERTIES
-    IMPORTED_LOCATION ${EXTERNAL_DIR}/EmberScript/build/libEmberScript.a
-    INTERFACE_INCLUDE_DIRECTORIES ${EXTERNAL_DIR}/EmberScript/include
-    FOLDER "External"
-)
-add_dependencies(EmberScriptLib EmberScript)
+add_library(EmberScriptLib STATIC ${EMBERSCRIPT_SRCS})
+target_include_directories(EmberScriptLib PUBLIC "${EXTERNAL_DIR}/EmberScript/include")
+set_target_properties(EmberScriptLib PROPERTIES FOLDER "External")
 
 if(APPLE)
     find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
@@ -96,17 +79,7 @@ endif()
 if(TARGET ScriptingModule)
     set_target_properties(ScriptingModule PROPERTIES FOLDER "Engine/Modules")
 endif()
-
-# Add headers and inl files to DataStructures if it exists
-file(GLOB DATA_STRUCTURES_HEADERS 
-    "${CMAKE_SOURCE_DIR}/engine/utils/data_structures/*.h"
-    "${CMAKE_SOURCE_DIR}/engine/utils/data_structures/*.inl"
-)
-
 if(TARGET DataStructures)
-    # Add header and inl files to the DataStructures target
-    target_sources(DataStructures PRIVATE ${DATA_STRUCTURES_HEADERS})
-    source_group("Header Files" FILES ${DATA_STRUCTURES_HEADERS})
     set_target_properties(DataStructures PROPERTIES FOLDER "Engine/Modules")
 endif()
 
