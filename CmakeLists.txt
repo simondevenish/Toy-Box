@@ -19,16 +19,30 @@ set(EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 add_subdirectory(${EXTERNAL_DIR}/AllocX)
 set_target_properties(AllocX PROPERTIES FOLDER "External")
 
+# Glob AllocX headers (note the `allocx` subdirectory) and add them to the AllocX target
+file(GLOB ALLOCX_HEADERS "${EXTERNAL_DIR}/AllocX/include/allocx/*.h")
+if(TARGET AllocX)
+    target_include_directories(AllocX PUBLIC "${EXTERNAL_DIR}/AllocX/include")
+    target_sources(AllocX PRIVATE ${ALLOCX_HEADERS})
+    source_group("Header Files" FILES ${ALLOCX_HEADERS})
+endif()
+
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
 set_target_properties(PhyzzyLib PROPERTIES FOLDER "External")
+# PhyzzyLib already has headers included as per the original description, no changes needed.
 
 # Remove ExternalProject_Add() for EmberScript
 # Instead, define EmberScriptLib directly from its source code.
 file(GLOB EMBERSCRIPT_SRCS "${EXTERNAL_DIR}/EmberScript/src/*.c")
+file(GLOB EMBERSCRIPT_HEADERS "${EXTERNAL_DIR}/EmberScript/include/*.h")
 
 add_library(EmberScriptLib STATIC ${EMBERSCRIPT_SRCS})
 target_include_directories(EmberScriptLib PUBLIC "${EXTERNAL_DIR}/EmberScript/include")
 set_target_properties(EmberScriptLib PROPERTIES FOLDER "External")
+
+# Add EmberScript headers to EmberScriptLib
+target_sources(EmberScriptLib PRIVATE ${EMBERSCRIPT_HEADERS})
+source_group("Header Files" FILES ${EMBERSCRIPT_HEADERS})
 
 if(APPLE)
     find_library(VULKAN_LIBRARY NAMES vulkan HINTS $ENV{VULKAN_SDK}/lib)
