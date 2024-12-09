@@ -24,7 +24,6 @@ if(TARGET AllocX)
     target_include_directories(AllocX PUBLIC "${EXTERNAL_DIR}/AllocX/include")
     target_sources(AllocX PRIVATE ${ALLOCX_HEADERS})
     source_group("Header Files" FILES ${ALLOCX_HEADERS})
-    # On MSVC, disable atomics if needed:
     if(MSVC)
         target_compile_definitions(AllocX PRIVATE __STDC_NO_ATOMICS__)
     endif()
@@ -32,7 +31,6 @@ endif()
 
 add_subdirectory(${EXTERNAL_DIR}/Phyzzy)
 set_target_properties(PhyzzyLib PROPERTIES FOLDER "External")
-# If warnings cause errors:
 if(MSVC)
     target_compile_options(PhyzzyLib PRIVATE /wd4201) # Disable nameless struct warning
 endif()
@@ -46,10 +44,8 @@ set_target_properties(EmberScriptLib PROPERTIES FOLDER "External")
 target_sources(EmberScriptLib PRIVATE ${EMBERSCRIPT_HEADERS})
 source_group("Header Files" FILES ${EMBERSCRIPT_HEADERS})
 
-# For EmberScript if it uses pthread.h and is not available on Windows:
 if(MSVC)
     target_compile_definitions(EmberScriptLib PRIVATE NO_PTHREAD)
-    # You must modify EmberScript source to avoid pthread usage if NO_PTHREAD is defined
 endif()
 
 if(APPLE)
@@ -79,6 +75,20 @@ if(TARGET gmock_main)
 endif()
 
 set(EXTERNAL_LIBS AllocX PhyzzyLib EmberScriptLib)
+
+# ==================================
+# Determine Forge libraries directory
+# ==================================
+if(MSVC)
+    # On Windows with MSVC, we can determine debug vs release lib directory
+    set(FORGE_LIB_DIR "${CMAKE_BINARY_DIR}/x64/${CMAKE_BUILD_TYPE}")
+    # Append OS.lib, Renderer.lib, and SpirvTools.lib from this directory
+    list(APPEND EXTERNAL_LIBS
+        "${FORGE_LIB_DIR}/OS.lib"
+        "${FORGE_LIB_DIR}/Renderer.lib"
+        "${FORGE_LIB_DIR}/SpirvTools.lib"
+    )
+endif()
 
 # ========================
 # Add Engine Modules
