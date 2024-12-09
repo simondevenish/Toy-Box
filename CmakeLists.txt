@@ -144,6 +144,11 @@ else()
     target_link_libraries(ToyBoxApp PRIVATE ToyBoxEngine)
 endif()
 
+if(MSVC)
+    # Add the Xinput library for gamepad functions
+    target_link_libraries(ToyBoxApp PRIVATE Xinput.lib)
+endif()
+
 if(APPLE)
     set(MACOSX_FRAMEWORKS
         "-framework Cocoa"
@@ -200,4 +205,35 @@ if(TARGET Nightly)
 endif()
 if(TARGET NightlyMemoryCheck)
     set_target_properties(NightlyMemoryCheck PROPERTIES FOLDER "CMake Utilities")
+endif()
+
+# ==================================
+# Include External MSProjects for The Forge Libraries
+# ==================================
+if(MSVC)
+    set(FORGE_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Examples_3/Unit_Tests/PC_Visual_Studio_2019/Libraries")
+
+    INCLUDE_EXTERNAL_MSPROJECT(OS 
+        "${FORGE_LIBRARIES_DIR}/OS/OS.vcxproj" 
+        TYPE UTILITY
+    )
+    set_target_properties(OS PROPERTIES FOLDER "Engine/TheForge")
+
+    INCLUDE_EXTERNAL_MSPROJECT(Renderer 
+        "${FORGE_LIBRARIES_DIR}/Renderer/Renderer.vcxproj"
+        TYPE UTILITY
+    )
+    set_target_properties(Renderer PROPERTIES FOLDER "Engine/TheForge")
+
+    INCLUDE_EXTERNAL_MSPROJECT(SpirvTools 
+        "${FORGE_LIBRARIES_DIR}/Tools/SpirvCross.vcxproj"
+        TYPE UTILITY
+    )
+    set_target_properties(SpirvTools PROPERTIES FOLDER "Engine/TheForge")
+endif()
+
+if(MSVC)
+    # Add the dependencies
+    add_dependencies(Renderer SpirvTools)
+    add_dependencies(ToyBoxApp OS Renderer SpirvTools)
 endif()
