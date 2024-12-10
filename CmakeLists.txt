@@ -237,3 +237,14 @@ if(MSVC)
     add_dependencies(Renderer SpirvTools)
     add_dependencies(ToyBoxApp OS Renderer SpirvTools)
 endif()
+
+if(MSVC)
+    # Copy WinPixEventRuntime.dll to the output directory
+    set(PIX_DLL_PATH "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Graphics/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll")
+
+    add_custom_command(TARGET ToyBoxApp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${PIX_DLL_PATH}"
+            $<TARGET_FILE_DIR:ToyBoxApp>
+        COMMENT "Copying WinPixEventRuntime.dll to output directory")
+endif()

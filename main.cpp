@@ -27,6 +27,8 @@
 // #include "Animation/Rig.h"
 // #include "Animation/SkeletonBatcher.h"
 
+#define D3D12_AGILITY_SDK_VERSION 715
+
 class MyApp : public IApp
 {
 public:
