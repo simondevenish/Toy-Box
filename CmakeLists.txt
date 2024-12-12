@@ -147,6 +147,27 @@ endif()
 if(MSVC)
     # Add the Xinput library for gamepad functions
     target_link_libraries(ToyBoxApp PRIVATE Xinput.lib)
+
+    # Add the additional libraries discovered from the The Forge projects:
+    target_link_libraries(ToyBoxApp PRIVATE
+        ws2_32.lib
+        dxcompiler.lib
+        WinPixEventRuntime.lib
+        amd_ags_x64.lib
+        nvapi64.lib
+        vulkan-1.lib
+    )
+
+    # Add library directories for these external libs if needed
+    set(TheForgeRoot "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box")
+    set(TheForgeCommon3 "${TheForgeRoot}/Common_3")
+
+    target_link_directories(ToyBoxApp PRIVATE
+        "${TheForgeCommon3}/Graphics/ThirdParty/OpenSource/ags/ags_lib/lib"
+        "${TheForgeCommon3}/Graphics/ThirdParty/OpenSource/nvapi/amd64"
+        "${TheForgeCommon3}/Graphics/ThirdParty/OpenSource/DirectXShaderCompiler/lib/x64"
+        "${TheForgeCommon3}/Graphics/ThirdParty/OpenSource/winpixeventruntime/bin"
+    )
 endif()
 
 if(APPLE)
@@ -232,13 +253,12 @@ if(MSVC)
     set_target_properties(SpirvTools PROPERTIES FOLDER "Engine/TheForge")
 endif()
 
+
 if(MSVC)
     # Add the dependencies
     add_dependencies(Renderer SpirvTools)
     add_dependencies(ToyBoxApp OS Renderer SpirvTools)
-endif()
 
-if(MSVC)
     # Copy WinPixEventRuntime.dll to the output directory
     set(PIX_DLL_PATH "${CMAKE_SOURCE_DIR}/external/The-Forge-Toy-Box/Common_3/Graphics/ThirdParty/OpenSource/winpixeventruntime/bin/WinPixEventRuntime.dll")
 
