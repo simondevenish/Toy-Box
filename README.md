@@ -30,6 +30,7 @@ Several core systems of Toy Box have been refactored into standalone repositorie
 
 ## **Third Party Projects**  
 - **[The Forge](https://github.com/ConfettiFX/The-Forge):** A robust, cross-platform rendering framework.
+- **[salient](https://github.com/simondevenish/salient):** An engine for creating Roguelike games, with a range of useful utility engine code.
 
 ## **Status**  
 Toy Box is under active development and is not yet production-ready. Contributions and discussions are welcome to help shape its future!  
