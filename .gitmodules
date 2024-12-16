@@ -19,3 +19,6 @@
 [submodule "external/The-Forge-Toy-Box"]
 	path = external/The-Forge-Toy-Box
 	url = https://github.com/simondevenish/The-Forge-Toy-Box.git
+[submodule "external/salient"]
+	path = external/salient
+	url = https://github.com/simondevenish/salient
